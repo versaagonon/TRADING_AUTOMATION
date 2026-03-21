@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>411 BOT | PERFORMANCE DASHBOARD</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="overlay"></div>
+    
+    <div class="dashboard-container">
+        <!-- HEADER -->
+        <header>
+            <div class="logo">
+                <span class="glitch" data-text="411 BOT AI">411 BOT AI</span>
+                <span class="subtitle">PERFORMANCE MONITOR v4.0</span>
+            </div>
+            <div class="server-status">
+                <div class="status-dot green"></div>
+                <span id="ai-status">WAITING...</span>
+                <span class="divider">|</span>
+                <span id="sim-date" class="sim-date">HISTORICAL: -</span>
+            </div>
+        </header>
+
+        <!-- TOP METRICS -->
+        <div class="metrics-grid">
+            <div class="metric-card glass">
+                <span class="label">EQUITY (TOTAL)</span>
+                <span class="value" id="balance">$10,000.00</span>
+            </div>
+            <div class="metric-card glass">
+                <span class="label">MARKET PRICE</span>
+                <span class="value accent" id="price">$0.00</span>
+            </div>
+            <div class="metric-card glass">
+                <span class="label">AI EFFICIENCY</span>
+                <span class="value" id="win-rate">0%</span>
+            </div>
+            <div class="metric-card glass">
+                <span class="label">EXPECTED MOVE</span>
+                <span class="value" id="true-signal" style="color: #64ffda;">WAITING</span>
+            </div>
+        </div>
+
+        <!-- MAIN LAYOUT -->
+        <div class="main-grid">
+            <!-- CHART -->
+            <div class="chart-section glass" id="chart-parent">
+                <div class="chart-header" style="position: absolute; top:0; left:0; right:0; z-index: 10;">
+                    <h3 style="margin-left: 20px; margin-top: 20px;">EQUITY GROWTH CURVE (NATIVE CANVAS)</h3>
+                    <div id="pnl" class="pnl-badge" style="margin-right: 20px; margin-top: 20px;">$0.00</div>
+                </div>
+                <canvas id="chart-canvas" style="width: 100%; height: 100%; border-radius: 8px;"></canvas>
+            </div>
+
+            <!-- SIDEBAR INFO -->
+            <div class="sidebar-section">
+                <!-- POSITION INFO -->
+                <div class="pos-card glass">
+                    <h3>AI TRADING STATUS</h3>
+                    <div class="pos-details">
+                        <div class="pos-row"><span>Logic:</span> <span id="pos-type">NONE</span></div>
+                        <div class="pos-row"><span>Entry:</span> <span id="pos-entry">-</span></div>
+                        <div class="pos-row"><span>Last:</span> <span id="pos-size">-</span></div>
+                    </div>
+                </div>
+
+                <!-- ALGOLOGS CONSOLE -->
+                <div class="console-card glass">
+                    <h3>ALGO ENGINE LOGS</h3>
+                    <div id="logs" class="log-container">
+                        <div class="log-item">[SYS] Technical Engine v4.0 Standby...</div>
+                    </div>
+                    <div class="input-area" style="flex-direction: column;">
+                        <button id="start-btn" style="width: 100%; padding: 1rem; font-size: 1.1rem; letter-spacing: 2px;">START TRADING ENGINE</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+:root {
+    --bg-color: #020617;
+    --glass-bg: rgba(30, 41, 59, 0.4);
+    --accent: #64ffda;
+    --accent-glow: rgba(100, 255, 218, 0.3);
+    --text-primary: #e2e8f0;
+    --text-muted: #94a3b8;
+    --red: #ff4b5c;
+    --green: #10b981;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: 100vh;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0) 0%, rgba(2, 6, 23, 1) 100%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.dashboard-container {
+    padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HEADER */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.logo .glitch {
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+}
+
+.logo .subtitle {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 4px;
+}
+
+.server-status {
+    background: var(--glass-bg);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.status-dot.green { background-color: var(--green); box-shadow: 0 0 10px var(--green); }
+
+/* METRICS */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.metric-card .label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.metric-card .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.metric-card .value.accent { color: var(--accent); }
+
+/* MAIN GRID */
+.main-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.chart-section {
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+    min-height: 500px; /* Force minimum height */
+    display: flex;
+    flex-direction: column;
+}
+
+#chart {
+    height: 100%;
+    flex-grow: 1;
+}
+
+.sidebar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.pos-card h3, .console-card h3 {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+.pos-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+    font-size: 0.9rem;
+}
+
+.pos-row span:last-child {
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.log-container {
+    background: rgba(0, 0, 0, 0.3);
+    height: 250px;
+    border-radius: 8px;
+    padding: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.log-item {
+    margin-bottom: 0.4rem;
+    color: #cbd5e1;
+}
+
+.input-area {
+    display: flex;
+    gap: 0.5rem;
+}
+
+input[type="text"] {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.8rem;
+    border-radius: 6px;
+    color: white;
+    flex-grow: 1;
+    outline: none;
+}
+
+input[type="text"]:focus {
+    border-color: var(--accent);
+}
+
+button {
+    background: var(--accent);
+    color: var(--bg-color);
+    border: none;
+    padding: 0 1.5rem;
+    border-radius: 6px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+/* HIDE TRADINGVIEW LOGO/WATERMARK */
+div[class*="tv-lightweight-charts-watermark"],
+div[class*="attribution"],
+td[class*="attribution"],
+a[href*="tradingview"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.chart-section::after {
+    content: "411 PROPRIETARY ENGINE";
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    opacity: 0.5;
+    z-index: 10;
+}
