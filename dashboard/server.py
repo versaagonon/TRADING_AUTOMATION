@@ -32,7 +32,7 @@ state = {
     "logs": ["[SYS] Protocol v10.0 (FUTURES) Online", "[SYS] Welcome Master Versaa!"],
     "sim_date": "-",
     "sim_index": 0,
-    "strategy_name": "strategy1",
+    "strategy_name": "geminipro",
     "trade_history": []
 }
 
@@ -202,7 +202,7 @@ def handle_start_engine(data):
         # 2. SYNC INITIAL STATE TO FRONTEND (CLEAN UI)
         state["initial_balance"] = data.get('initial_balance', 100.0)
         state["balance"] = state["initial_balance"]
-        state["strategy_name"] = data.get('strategy', 'strategy1')
+        state["strategy_name"] = data.get('strategy', 'geminipro')
         state["speed"] = data.get('speed', 'normal') 
         state["engine_running"] = True
         state["ai_status"] = f"PREPARING ({state['strategy_name'].upper()})"

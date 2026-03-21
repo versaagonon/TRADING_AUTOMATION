@@ -106,27 +106,27 @@ function drawChart(history, markers, currentIdx) {
     const ctx = canvas.getContext('2d');
     const w = canvas.width = canvas.parentElement.clientWidth;
     const h = canvas.height = canvas.parentElement.clientHeight;
-    
-    ctx.clearRect(0,0,w,h);
-    if(!history || history.length < 2) return;
+
+    ctx.clearRect(0, 0, w, h);
+    if (!history || history.length < 2) return;
 
     const min = Math.min(...history) * 0.9995;
     const max = Math.max(...history) * 1.0005;
     const range = max - min;
 
     // Gradient Background
-    const grad = ctx.createLinearGradient(0,0,0,h);
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
     grad.addColorStop(0, 'rgba(100, 255, 218, 0.1)');
     grad.addColorStop(1, 'transparent');
-    
+
     ctx.beginPath();
     ctx.moveTo(0, h - ((history[0] - min) / range) * h);
-    for(let i=1; i<history.length; i++) {
-        const x = (i / (history.length-1)) * w;
+    for (let i = 1; i < history.length; i++) {
+        const x = (i / (history.length - 1)) * w;
         const y = h - ((history[i] - min) / range) * h;
         ctx.lineTo(x, y);
     }
-    
+
     ctx.strokeStyle = '#64ffda';
     ctx.lineWidth = 2;
     ctx.stroke();
@@ -137,7 +137,7 @@ function drawChart(history, markers, currentIdx) {
     ctx.fill();
 
     // Draw Markers
-    if(markers && markers.length > 0 && currentIdx !== undefined) {
+    if (markers && markers.length > 0 && currentIdx !== undefined) {
         markers.forEach(m => {
             const windowSize = 500;
             const startIdx = Math.max(0, currentIdx - windowSize + 1);
@@ -147,10 +147,10 @@ function drawChart(history, markers, currentIdx) {
                 const x = (relativeIdx / (history.length - 1)) * w;
                 const equityVal = history[relativeIdx];
                 const y = h - ((equityVal - min) / range) * h;
-                
+
                 ctx.save();
                 ctx.shadowBlur = 15;
-                
+
                 if (m.type === 'BUY') {
                     // Triangle Up (Green) - REFINED SIZE
                     ctx.fillStyle = '#64ffda';
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startBtn.addEventListener('click', () => {
             if (!isRunning) {
                 const modal = document.getElementById('initial-modal').value || 100;
-                const strategy = document.getElementById('strategy-select').value || 'strategy1';
+                const strategy = document.getElementById('strategy-select').value || 'geminipro';
                 const speed = document.getElementById('speed-select').value || 'normal';
                 socket.emit('start_engine', { initial_balance: parseFloat(modal), strategy, speed });
             } else {
