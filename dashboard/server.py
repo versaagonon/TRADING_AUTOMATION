@@ -8,8 +8,9 @@ from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'malxgmn_secret_v50'
-socketio = SocketIO(app, async_mode='threading', cors_allowed_origins="*")
+app.config['SECRET_KEY'] = 'malxgmn_secret_v80'
+# Kurangi ping_timeout agar lebih responsif
+socketio = SocketIO(app, async_mode='threading', cors_allowed_origins="*", ping_timeout=10, ping_interval=5)
 
 # CONFIG
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -26,31 +27,30 @@ state = {
     "signals_processed": 0,
     "correct_signals": 0,
     "ai_status": "WAITING...",
-    "logs": ["[SYS] Protocol v5.0 (NATIVE DATA ENGINE) Online", "[SYS] Waiting for Launch Sequence..."],
+    "logs": ["[SYS] Protocol v8.0 (ULTRA-SYNC) Online", "[SYS] Waiting for Launch Sequence..."],
     "sim_date": "-",
     "sim_index": 0,
 }
 
 df_historical = None
 equity_history = []
-trade_markers = [] # [{time: x, type: 'BUY/SELL', price: y}]
+trade_markers = []
 
 def load_and_calculate_indicators():
     global df_historical
     print("[*] Loading DATA & Calculating Indicators...")
     if not os.path.exists(DATA_FILE): return False
-        
     try:
         with open(DATA_FILE, 'r') as f:
             records = json.load(f)
-        
         df = pd.DataFrame(records)
         df['close'] = df['close'].astype(float)
         df['volume'] = df['volume'].astype(float)
         
-        df['EMA_50'] = ta.ema(df['close'], length=50)
-        df['EMA_200'] = ta.ema(df['close'], length=200)
-        df['RSI_14'] = ta.rsi(df['close'], length=14)
+        # Indikator teknikal untuk strategi agresif
+        df['EMA_12'] = ta.ema(df['close'], length=12)
+        df['EMA_26'] = ta.ema(df['close'], length=26)
+        df['RSI_9'] = ta.rsi(df['close'], length=9) # RSI lebih pendek agar lebih sensitif
         df['VOL_SMA_20'] = ta.sma(df['volume'], length=20)
         
         df_historical = df.dropna().reset_index(drop=True)
@@ -71,13 +71,11 @@ def historical_sim_tracker():
         if not load_and_calculate_indicators(): return
             
     total_records = len(df_historical)
-    
     while not state["engine_running"]: time.sleep(1)
         
-    print("[+] Engine Starting...")
-    state["logs"].append("[SYS] ENGINE STARTED. Flowing Native Data...")
-    state["ai_status"] = "ACTIVE (NATIVE)"
-    socketio.emit('state_update', state)
+    print("[+] Engine Starting Sync...")
+    state["logs"].append("[SYS] ENGINE STARTED. Ultra-Sync Data Streaming...")
+    state["ai_status"] = "ACTIVE (v8.0 SYNC)"
     
     for i in range(total_records - 5):
         if not state["engine_running"]: break
@@ -88,23 +86,24 @@ def historical_sim_tracker():
             state["sim_date"] = str(row['date'])
             state["sim_index"] = i
             
-            # Ground truth
+            # Ground truth (5 candle ke depan)
             next_price = float(df_historical.iloc[i+5]['close'])
-            if next_price > state["price"] * 1.005: state["true_signal"] = "BUY"
-            elif next_price < state["price"] * 0.995: state["true_signal"] = "SELL"
+            if next_price > state["price"] * 1.002: state["true_signal"] = "BUY"
+            elif next_price < state["price"] * 0.998: state["true_signal"] = "SELL"
             else: state["true_signal"] = "HOLD"
             
-            ema50 = row['EMA_50']
-            ema200 = row['EMA_200']
-            rsi = row['RSI_14']
-            vol = row['volume']
-            vol_sma = row['VOL_SMA_20']
+            ema12 = row['EMA_12']
+            ema26 = row['EMA_26']
+            rsi = row['RSI_9']
             
             decision = "HOLD"
+            # STRATEGI AGRESIF V8.0
             if not state["position"]:
-                if (state["price"] > ema200) and (ema50 > ema200) and (rsi < 40) and (vol > vol_sma): decision = "BUY"
+                # EMA Crossover + Momentum RSI
+                if (ema12 > ema26) and (rsi > 50): decision = "BUY"
             else:
-                if (state["price"] < ema50) or (rsi > 70): decision = "SELL"
+                # EMA Cross Down atau RSI Overbought
+                if (ema12 < ema26) or (rsi > 80): decision = "SELL"
                     
             if decision != "HOLD":
                 state["last_signal"] = decision
@@ -125,27 +124,32 @@ def historical_sim_tracker():
                     state["logs"].append(f"🔴 SELL @ {state['price']}. PNL: ${profit:.2f}")
                     trade_markers.append({"time": i, "type": "SELL"})
             
-            pnl = (state["price"] - state["position"]["entry"]) * state["position"]["size"] if state["position"] else 0.0
-            state["pnl"] = pnl
-            equity = state["balance"] + pnl
+            # HITUNG EKUITAS & PNL
+            pnl_current = (state["price"] - state["position"]["entry"]) * state["position"]["size"] if state["position"] else 0.0
+            equity = state["balance"] + pnl_current
+            state["pnl"] = equity - 10000.0
             equity_history.append(float(equity))
             
-            # Kirim Data Mentah Berkecepatan Tinggi
+            # ULTRA-SYNC EMIT (Satu Emit untuk SEMUA Data)
+            # Ini menjamin Log and Ground Truth sinkron 100%
             socketio.emit('raw_update', {
                 "price": state["price"], 
                 "pnl": state["pnl"], 
                 "balance": state["balance"],
                 "equity": equity,
-                "equity_history": equity_history[-500:], # Batasi 500 data terakhir
+                "equity_history": equity_history[-500:], 
                 "markers": trade_markers[-50:],
                 "true_signal": state["true_signal"],
-                "sim_date": state["sim_date"]
+                "sim_date": state["sim_date"],
+                "logs": state["logs"][-30:], # Kirim logs terbaru setiap detak!
+                "ai_status": state["ai_status"],
+                "pos": state["position"],
+                "win_rate": (state["correct_signals"] / state["signals_processed"] * 100) if state["signals_processed"] > 0 else 0
             })
 
-            if i % 10 == 0: socketio.emit('state_update', state)
-            time.sleep(0.005) # SPEED HACK: Sangat Cepat
+            time.sleep(0.04) 
         except Exception as e:
-            print(f"Error in Loop: {e}")
+            print(f"Error Loop: {e}")
 
 # ==========================================
 # BOOT
@@ -167,7 +171,7 @@ def handle_start_engine(data):
         
 if __name__ == '__main__':
     print("\n" + "="*50)
-    print(" [✔] 411 NATIVE DATA CORE v5.0 ")
+    print(" [✔] 411 NATIVE SYNC CORE v8.0 ")
     print("="*50 + "\n")
     load_and_calculate_indicators()
     threading.Thread(target=historical_sim_tracker, daemon=True).start()
