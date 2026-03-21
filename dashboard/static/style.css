@@ -22,6 +22,7 @@ body {
     overflow-x: hidden;
     overflow-y: auto;
     min-height: 100vh;
+    background-image: radial-gradient(circle at 50% 50%, rgba(100, 255, 218, 0.02) 0%, transparent 80%);
 }
 
 .overlay {
@@ -85,7 +86,10 @@ header {
     border-radius: 50%;
 }
 
-.status-dot.green { background-color: var(--green); box-shadow: 0 0 10px var(--green); }
+.status-dot.green {
+    background-color: var(--green);
+    box-shadow: 0 0 10px var(--green);
+}
 
 /* METRICS */
 .metrics-grid {
@@ -117,22 +121,23 @@ header {
     font-family: 'JetBrains Mono', monospace;
 }
 
-.metric-card .value.accent { color: var(--accent); }
+.metric-card .value.accent {
+    color: var(--accent);
+}
 
 /* MAIN GRID */
 .main-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 1.5rem;
-    flex-grow: 1;
-    min-height: 0;
+    align-items: start; /* Mencegah kolom pendek ikut melar mengikuti kolom panjang */
 }
 
 .chart-section {
     position: relative;
     padding: 0;
     overflow: hidden;
-    min-height: 500px; /* Force minimum height */
+    height: 620px; /* Sejajarkan dengan sidebar agar rapi */
     display: flex;
     flex-direction: column;
 }
@@ -148,7 +153,8 @@ header {
     gap: 1.5rem;
 }
 
-.pos-card h3, .console-card h3 {
+.pos-card h3,
+.console-card h3 {
     font-size: 0.9rem;
     margin-bottom: 1rem;
     color: var(--text-muted);

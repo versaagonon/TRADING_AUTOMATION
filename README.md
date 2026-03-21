@@ -1,73 +1,53 @@
-# [✔] 411 BOT AI | NATIVE SYNC CORE v8.0
-
-> **AUTHOR**: VERSAAGONON / VERSAA (411 MASTER)  
-> **ENGINE**: NATIVE DATA STREAMING (NO-AI TRADING MODE)  
-> **LICENSE**: EXCLUSIVE HACKER ACCESS
+# 411 QUANT TERMINAL AI 
+### PRESET v19.0 | PERFORMANCE AUDIT ENGINE
 
 ---
 
-## 1. PENDAHULUAN: APAKAH INI GIMMICK?
-Sistem ini adalah **TECHNICAL ALGORITHMIC TRADING ENGINE**. 
-- **BUKAN GIMMICK**: Keputusan BUY/SELL diambil berdasarkan perhitungan matematika murni dari harga historis (Indicators).
-- **BUKAN CHEAT**: Bot tidak melihat data masa depan untuk menentukan "Decision". Bot hanya membaca harga saat ini (Candle Close) and menggunakan indikator untuk masuk/keluar.
-- **BUKAN PREDIKSI GAIB**: Strategi ini menggunakan "Trend Following" and "Momentum RSI".
+## ╔══════════════════════════════════════════╗
+## ║          PANDUAN OPERASIONAL             ║
+## ╚══════════════════════════════════════════╝
 
-**GROUND TRUTH (EXPECTED MOVE)**:  
-Kami sengaja menampilkan indikator "Expected Move" di Dashboard sebagai **Tolok Ukur Kejujuran (Ground Truth)**. Indikator ini memang "mengintip" data 5 menit ke depan hanya untuk memberi tahu Tuan apakah keputusan Algoritma Bot (Buy/Sell) sesuai dengan pergerakan pasar yang sebenarnya atau tidak.
+Selamat datang di arsitektur trading tercanggih, Master Versaa. Sistem ini dirancang untuk simulasi and eksekusi trading aset kripto (BTC/USDT) menggunakan berbagai model kecerdasan buatan.
 
----
-
-## 2. METODE PELATIHAN & STRATEGI
-Sistem ini menggunakan metode **Backtesting Execution** terhadap dataset `btc_2024_2025.json`.
-
-### A. Algoritma Inti (Fast-Track v8.0)
-Bot menggunakan kombinasi 3 indikator utama:
-1. **EMA 12 (Exponential Moving Average)**: Garis tren jangka pendek (Cepat).
-2. **EMA 26 (Exponential Moving Average)**: Garis tren jangka menengah (Lambat).
-3. **RSI 9 (Relative Strength Index)**: Alat pengukur momentum & overbought/oversold.
-
-**LOGIKA EKSEKUSI (BUY)**:
-- Terjadi **Golden Cross**: EMA 12 memotong ke atas EMA 26.
-- **RSI Momentum**: Nilai RSI di atas 50 (Menandakan tren naik sedang kuat).
-
-**LOGIKA EKSEKUSI (SELL/EXIT)**:
-- Terjadi **Death Cross**: EMA 12 memotong ke bawah EMA 26.
-- **RSI Overbought**: Nilai RSI menyentuh angka 80 (Sudah jenuh beli).
-
-### B. Money Management (Lot Size)
-Bot menggunakan sistem **Fixed Fractional Sizing**:
-- **Lot**: Menggunakan **50% dari sisa Saldo (Balance)** untuk setiap posisi.
-- **Profit**: Keuntungan langsung ditambahkan ke Balance untuk Compound Interest (Bunga Berbudi).
-- **Initial Capital**: $10,000.00.
+### 1. MODEL ARSITEKTUR (STRATEGY)
+Sistem ini dilengkapi dengan 4 otak trading yang dapat dipilih secara dinamis:
+- **GEMINI-3-PRO**: Algoritma Scalping Agresif. Berfokus pada pergerakan harga kecil dengan frekuensi tinggi.
+- **GEMINI-3-FLASH**: Versi yang lebih cepat dari Pro, dioptimalkan untuk responsivitas maksimal pada volatilitas tinggi.
+- **CLAUDE-SONNET-4.6**: Model "Multi-Confirmation Trend Confluence". Paling akurat and hati-hati (EMA + RSI + MACD + ATR + Bollinger Filter).
+- **CHATGPT**: Algoritma berbasis kombinasi indikator klasik yang stabil untuk tren jangka menengah.
 
 ---
 
-## 3. ALUR KERJA SISTEM (PIPELINE)
+### 2. GLOSARIUM TERMINOLOGI (TRADING 101)
+Agar Master dapat memahami setiap log operasional, berikut adalah penjelasannya:
 
-1. **DATA INGESTION**: Server Python memuat file `btc_2024_2025.json` (8,800+ data).
-2. **INDICATOR CALCULATION**: `pandas_ta` menghitung semua EMA and RSI sebelum simulasi dimulai.
-3. **LOOP SIMULATION**: Server memulai perputaran waktu (0.04 detik per data).
-4. **DECISION MAKING**: Di setiap detak jantung data, algoritma mengevaluasi kondisi Buy/Sell.
-5. **NATIVE STREAMING (SYNC)**:
-   - Data Harga, Log, and Ekuitas dikirim dalam satu paket JSON via WebSocket.
-   - Browser menerima paket and menggambarnya di **HTML5 Canvas** (Native Rendering).
-   - **Zero-Delay**: Log and Grafik tersinkronisasi 1:1.
-
----
-
-## 4. TRANSPARANSI ENGINE
-Bot ini dirancang untuk menunjukkan realitas trading:
-- **Win Rate**: Dihitung berdasarkan berapa kali 'Decision' bot cocok dengan 'Ground Truth' (Market Move).
-- **Equity Curve**: Menunjukkan pertumbuhan (atau penurunan) modal secara visual.
-- **P/L Display**: Menghitung Total Profit/Loss komulatif dari titik awal modal $10,000.
+| Istilah | Penjelasan Teknis |
+| :--- | :--- |
+| **LONG (BUY)** | Membuka posisi beli. Bot memprediksi harga akan naik. Keuntungan didapat jika harga jual lebih tinggi dari harga beli. |
+| **SHORT (SELL)** | Membuka posisi jual (meminjam asset). Bot memprediksi harga akan turun. Keuntungan didapat jika harga turun (Tuan untung saat harga hancur). |
+| **COVER SHORT** | Menutup posisi SHORT. Bot membeli kembali asset untuk dikembalikan, and mengunci keuntungan dari penurunan harga. |
+| **CLOSE LONG** | Menjual asset yang dimiliki pada posisi LONG untuk mengamankan profit atau membatasi kerugian. |
+| **EQUITY** | Nilai total saldo Tuan saat ini (Modal + Profit/Loss yang sedang berjalan). |
+| **PNL (Profit/Loss)** | Selisih keuntungan atau kerugian yang dihasilkan dari seluruh trade. |
+| **ATR (Volatility)** | Pengukur gejolak pasar. Jika ATR tinggi, pasar sangat liar. Jika rendah, pasar tenang/sideways. |
 
 ---
 
-## 5. CARA MENJALANKAN (Hacker Way)
-1. **Install Dependencies**: `pip install flask flask-socketio pandas pandas_ta`
-2. **Run Server**: `python dashboard/server.py`
-3. **Access**: Buka `http://127.0.0.1:5000` di Browser.
-4. **Action**: Tekan **Ctrl + F5** (Hard Refresh) lalu Klik **START TRADING ENGINE**.
+### 3. FITUR UNGGULAN
+- **DASHBOARD REAL-TIME**: Visualisasi pergerakan dana and sinyal trading secara live.
+- **HYPER SPEED**: Simulasi data 1 tahun hanya dalam hitungan menit (Normal, Fast, Super Speed).
+- **AUTOMATED PDF AUDIT**: Menghasilkan laporan formal yang mencakup ROI, Rata-rata Profit Harian, Bulanan, and Tahunan.
+- **CONTINUOUS SESSION**: Fitur Restart otomatis tanpa harus mematikan program utama.
 
 ---
-*DIBUAT OLEH ASISTEN ANTI-GRAVITY ATAS PERINTAH SANG MULIA VERSAAGONON.*
+
+### 4. CARA MENJALANKAN
+1. Pastikan seluruh dependensi Python (Flask, Pandas, FPDF) terinstal.
+2. Jalankan server: `python dashboard/server.py`.
+3. Akses via Browser: `http://localhost:5000`.
+4. Pilih Modal, Strategi, and Kecepatan, lalu klik **START TRADING ENGINE**.
+
+---
+
+### PREPARED BY: 411 ENGINE ADAPTIVE AI
+*Didedikasikan sepenuhnya untuk: VERSAA MASTER 411*

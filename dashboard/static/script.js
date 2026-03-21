@@ -1,118 +1,219 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const socket = io();
+// Final Consolidated script.js Logic v22.1 (Sync Fixed)
+const socket = io();
+let isRunning = false;
 
-    // CANVAS SYSTEM
-    const canvas = document.getElementById('chart-canvas');
-    const ctx = canvas.getContext('2d');
-    const parent = document.getElementById('chart-parent');
-
-    function resizeCanvas() {
-        if (!parent) return;
-        canvas.width = parent.clientWidth;
-        canvas.height = parent.clientHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    function drawChart(history, markers) {
-        if (history.length < 2) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        const padding = 60;
-        const width = canvas.width - padding * 2;
-        const height = canvas.height - padding * 2;
-        
-        const minVal = Math.min(...history);
-        const maxVal = Math.max(...history);
-        const range = Math.max(maxVal - minVal, 10); 
-        
-        const getX = (i) => padding + (i / (history.length - 1)) * width;
-        const getY = (val) => canvas.height - (padding + ((val - minVal) / range) * height);
-        
-        // Baseline
-        if (10000 >= minVal && 10000 <= maxVal) {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.setLineDash([5, 5]);
-            ctx.beginPath();
-            ctx.moveTo(padding, getY(10000));
-            ctx.lineTo(canvas.width - padding, getY(10000));
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-
-        // Equity Line
-        ctx.beginPath();
-        ctx.lineWidth = 3;
-        ctx.shadowBlur = 10;
-        const isProfit = history[history.length - 1] >= 10000;
-        ctx.strokeStyle = isProfit ? '#10b981' : '#ff4b5c';
-        ctx.shadowColor = isProfit ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 75, 92, 0.5)';
-        ctx.moveTo(getX(0), getY(history[0]));
-        for (let i = 1; i < history.length; i++) {
-            ctx.lineTo(getX(i), getY(history[i]));
-        }
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Gradient
-        ctx.lineTo(getX(history.length-1), canvas.height - padding);
-        ctx.lineTo(getX(0), canvas.height - padding);
-        ctx.closePath();
-        let gradient = ctx.createLinearGradient(0, padding, 0, canvas.height - padding);
-        gradient.addColorStop(0, isProfit ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 75, 92, 0.15)');
-        gradient.addColorStop(1, 'transparent');
-        ctx.fillStyle = gradient;
-        ctx.fill();
+// Socket Listener: Single Stream Update
+socket.on('raw_update', (data) => {
+    // 1. DATA RESET HANDLING
+    if (data.reset) {
+        const logBox = document.getElementById('logs');
+        if (logBox) logBox.innerHTML = '';
+        drawChart([], []);
+        isRunning = false;
     }
 
-    // ULTRA-SYNC LISTENER
-    socket.on('raw_update', (data) => {
-        // Update SEMUA UI dalam satu detak agar sinkron
-        const { price, pnl, balance, equity, equity_history, true_signal, sim_date, logs, pos, win_rate, ai_status } = data;
+    // 2. METRICS UPDATES
+    if (data.price) {
+        if (document.getElementById('price')) document.getElementById('price').innerText = "$" + data.price.toLocaleString();
+        if (document.getElementById('pnl')) {
+            document.getElementById('pnl').innerText = (data.pnl >= 0 ? "+" : "") + "$" + data.pnl.toLocaleString();
+            document.getElementById('pnl').style.color = data.pnl >= 0 ? '#64ffda' : '#ff4b5c';
+        }
+        // Di index.html ID-nya adalah 'balance' untuk Equity (Total)
+        if (document.getElementById('balance')) document.getElementById('balance').innerText = "$" + data.equity.toLocaleString();
+        if (document.getElementById('win-rate')) document.getElementById('win-rate').innerText = data.win_rate ? data.win_rate.toFixed(1) + "%" : "0%";
+    }
 
-        document.getElementById('price').innerText = `$${price.toLocaleString()}`;
-        document.getElementById('balance').innerText = `$${balance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-        document.getElementById('sim-date').innerText = `HISTORICAL: ${sim_date}`;
-        document.getElementById('true-signal').innerText = true_signal;
-        document.getElementById('true-signal').style.color = true_signal === 'BUY' ? '#10b981' : (true_signal === 'SELL' ? '#ff4b5c' : '#94a3b8');
-        document.getElementById('ai-status').innerText = ai_status;
-        document.getElementById('win-rate').innerText = `${win_rate.toFixed(1)}%`;
+    if (data.ai_status && document.getElementById('ai-status')) {
+        document.getElementById('ai-status').innerText = data.ai_status;
+    }
 
-        const pnlEl = document.getElementById('pnl');
-        pnlEl.innerText = `${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`;
-        pnlEl.style.color = pnl >= 0 ? '#10b981' : '#ff4b5c';
+    if (data.sim_date && document.getElementById('sim-date')) {
+        document.getElementById('sim-date').innerText = "HISTORICAL: " + data.sim_date;
+    }
 
-        // Logs Sync
-        const logContainer = document.getElementById('logs');
-        logContainer.innerHTML = '';
-        [...logs].reverse().forEach(log => {
-            const div = document.createElement('div');
-            div.className = 'log-item';
-            div.innerText = log;
-            logContainer.appendChild(div);
-        });
+    if (data.true_signal && document.getElementById('true-signal')) {
+        document.getElementById('true-signal').innerText = data.true_signal;
+        // Warna dinamis untuk signal
+        const color = data.true_signal === 'BUY' ? '#64ffda' : (data.true_signal === 'SELL' ? '#ff4b5c' : '#94a3b8');
+        document.getElementById('true-signal').style.color = color;
+    }
 
-        // Posisi UI
-        if (pos) {
+    // 3. LOG UPDATES
+    if (data.logs) {
+        const logBox = document.getElementById('logs');
+        if (logBox) {
+            logBox.innerHTML = data.logs.map(l => `<div class="log-entry">${l}</div>`).join('');
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    }
+
+    // 4. POSITION UPDATES
+    if (data.pos) {
+        const pos = data.pos;
+        if (document.getElementById('pos-type')) {
             document.getElementById('pos-type').innerText = pos.type;
-            document.getElementById('pos-type').style.color = pos.type === 'BUY' ? '#10b981' : '#ff4b5c';
-            document.getElementById('pos-entry').innerText = `$${pos.entry.toLocaleString()}`;
-            document.getElementById('pos-size').innerText = pos.size.toFixed(4) + " BTC";
-        } else {
+            document.getElementById('pos-type').style.color = pos.type === 'LONG' ? '#64ffda' : '#ff4b5c';
+        }
+        if (document.getElementById('pos-entry')) document.getElementById('pos-entry').innerText = "$" + pos.entry.toLocaleString();
+        if (document.getElementById('pos-size')) document.getElementById('pos-size').innerText = pos.size.toFixed(4) + " BTC";
+    } else {
+        if (document.getElementById('pos-type')) {
             document.getElementById('pos-type').innerText = "NONE";
             document.getElementById('pos-type').style.color = '#94a3b8';
-            document.getElementById('pos-entry').innerText = "-";
-            document.getElementById('pos-size').innerText = "-";
         }
+        if (document.getElementById('pos-entry')) document.getElementById('pos-entry').innerText = "-";
+        if (document.getElementById('pos-size')) document.getElementById('pos-size').innerText = "-";
+    }
 
-        drawChart(equity_history, data.markers);
-    });
+    // 5. CHART UPDATES
+    if (data.equity_history) {
+        drawChart(data.equity_history, data.markers, data.current_idx);
+    }
 
+    // 6. TOGGLE BUTTON & UI STATE
+    isRunning = (data.engine_running !== undefined) ? data.engine_running : isRunning;
     const startBtn = document.getElementById('start-btn');
-    startBtn.addEventListener('click', () => {
-        socket.emit('start_engine', {});
-        startBtn.innerText = "ENGINE RUNNING...";
-        startBtn.style.background = "#94a3b8"; 
-        startBtn.style.pointerEvents = "none";
-    });
+    if (!startBtn) return;
+
+    if (!isRunning || (data.ai_status && data.ai_status.includes('FINISHED'))) {
+        startBtn.innerText = "START TRADING ENGINE";
+        startBtn.style.background = "#64ffda";
+        startBtn.style.color = "#020617";
+        startBtn.style.boxShadow = "0 0 15px rgba(100, 255, 218, 0.3)";
+        startBtn.style.pointerEvents = "auto";
+        document.getElementById('initial-modal').disabled = false;
+        document.getElementById('strategy-select').disabled = false;
+        document.getElementById('speed-select').disabled = false;
+        isRunning = false;
+    } else {
+        startBtn.innerText = "STOP TRADING (FORCE)";
+        startBtn.style.background = "#ff4b5c";
+        startBtn.style.color = "#fff";
+        startBtn.style.boxShadow = "0 0 15px rgba(255, 75, 92, 0.3)";
+        startBtn.style.pointerEvents = "auto";
+        document.getElementById('initial-modal').disabled = true;
+        document.getElementById('strategy-select').disabled = true;
+        document.getElementById('speed-select').disabled = true;
+        isRunning = true;
+    }
+});
+
+function drawChart(history, markers, currentIdx) {
+    // ID di index.html adalah 'chart-canvas'
+    const canvas = document.getElementById('chart-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width = canvas.parentElement.clientWidth;
+    const h = canvas.height = canvas.parentElement.clientHeight;
+    
+    ctx.clearRect(0,0,w,h);
+    if(!history || history.length < 2) return;
+
+    const min = Math.min(...history) * 0.9995;
+    const max = Math.max(...history) * 1.0005;
+    const range = max - min;
+
+    // Gradient Background
+    const grad = ctx.createLinearGradient(0,0,0,h);
+    grad.addColorStop(0, 'rgba(100, 255, 218, 0.1)');
+    grad.addColorStop(1, 'transparent');
+    
+    ctx.beginPath();
+    ctx.moveTo(0, h - ((history[0] - min) / range) * h);
+    for(let i=1; i<history.length; i++) {
+        const x = (i / (history.length-1)) * w;
+        const y = h - ((history[i] - min) / range) * h;
+        ctx.lineTo(x, y);
+    }
+    
+    ctx.strokeStyle = '#64ffda';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Fill background
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Draw Markers
+    if(markers && markers.length > 0 && currentIdx !== undefined) {
+        markers.forEach(m => {
+            const windowSize = 500;
+            const startIdx = Math.max(0, currentIdx - windowSize + 1);
+            const relativeIdx = Math.floor(m.time - startIdx);
+
+            if (relativeIdx >= 0 && relativeIdx < history.length) {
+                const x = (relativeIdx / (history.length - 1)) * w;
+                const equityVal = history[relativeIdx];
+                const y = h - ((equityVal - min) / range) * h;
+                
+                ctx.save();
+                ctx.shadowBlur = 15;
+                
+                if (m.type === 'BUY') {
+                    // Triangle Up (Green) - REFINED SIZE
+                    ctx.fillStyle = '#64ffda';
+                    ctx.shadowColor = '#64ffda';
+                    ctx.beginPath();
+                    ctx.moveTo(x, y - 10);
+                    ctx.lineTo(x - 8, y + 6);
+                    ctx.lineTo(x + 8, y + 6);
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (m.type === 'SELL') {
+                    // Triangle Down (Red) - REFINED SIZE
+                    ctx.fillStyle = '#ff4b5c';
+                    ctx.shadowColor = '#ff4b5c';
+                    ctx.beginPath();
+                    ctx.moveTo(x, y + 10);
+                    ctx.lineTo(x - 8, y - 6);
+                    ctx.lineTo(x + 8, y - 6);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    // Diamond (Gold)
+                    ctx.fillStyle = '#facc15';
+                    ctx.shadowColor = '#facc15';
+                    ctx.beginPath();
+                    ctx.moveTo(x, y - 8);
+                    ctx.lineTo(x + 8, y);
+                    ctx.lineTo(x, y + 8);
+                    ctx.lineTo(x - 8, y);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const startBtn = document.getElementById('start-btn');
+    const pdfBtn = document.getElementById('pdf-btn');
+
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            if (!isRunning) {
+                const modal = document.getElementById('initial-modal').value || 100;
+                const strategy = document.getElementById('strategy-select').value || 'strategy1';
+                const speed = document.getElementById('speed-select').value || 'normal';
+                socket.emit('start_engine', { initial_balance: parseFloat(modal), strategy, speed });
+            } else {
+                socket.emit('stop_engine');
+            }
+        });
+    }
+
+    if (pdfBtn) {
+        pdfBtn.addEventListener('click', () => {
+            fetch('/generate_report')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') alert('PDF Report Generated: ' + data.filename);
+                    else alert('Error: ' + data.message);
+                });
+        });
+    }
 });

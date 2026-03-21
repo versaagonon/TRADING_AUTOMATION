@@ -1,20 +1,25 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>411 BOT | PERFORMANCE DASHBOARD</title>
     <!-- CSS Internal/Local -->
     <link rel="stylesheet" href="/static/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
     <!-- ROBUST SOCKET.IO LOADING (FALLBACK MULTILEVEL) -->
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js" onerror="this.src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js'"></script>
-    <script>if(typeof io === 'undefined') { document.write('<script src="/static/socket.io.js"><\/script>'); }</script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"
+        onerror="this.src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js'"></script>
+    <script>if (typeof io === 'undefined') { document.write('<script src="/static/socket.io.js"><\/script>'); }</script>
 </head>
+
 <body>
     <div class="overlay"></div>
-    
+
     <div class="dashboard-container">
         <!-- HEADER -->
         <header>
@@ -34,7 +39,7 @@
         <div class="metrics-grid">
             <div class="metric-card glass">
                 <span class="label">EQUITY (TOTAL)</span>
-                <span class="value" id="balance">$10,000.00</span>
+                <span class="value" id="balance">$100.00</span>
             </div>
             <div class="metric-card glass">
                 <span class="label">MARKET PRICE</span>
@@ -53,12 +58,14 @@
         <!-- MAIN LAYOUT -->
         <div class="main-grid">
             <!-- CHART (HARD-CODED CANVAS) -->
-            <div class="chart-section glass" id="chart-parent" style="position: relative; overflow: hidden; min-height: 500px;">
+            <div class="chart-section glass" id="chart-parent"
+                style="position: relative; overflow: hidden;">
                 <div class="chart-header" style="position: absolute; top:0; left:0; right:0; z-index: 10;">
                     <h3 style="margin-left: 20px; margin-top: 20px;">EQUITY GROWTH CURVE (NATIVE ENGINE)</h3>
                     <div id="pnl" class="pnl-badge" style="margin-right: 20px; margin-top: 20px;">$0.00</div>
                 </div>
-                <canvas id="chart-canvas" style="display: block; width: 100%; height: 100%; border-radius: 8px;"></canvas>
+                <canvas id="chart-canvas"
+                    style="display: block; width: 100%; height: 100%; border-radius: 8px;"></canvas>
             </div>
 
             <!-- SIDEBAR INFO -->
@@ -74,13 +81,40 @@
                 </div>
 
                 <!-- ALGOLOGS CONSOLE -->
-                <div class="console-card glass">
-                    <h3>ALGO ENGINE LOGS</h3>
-                    <div id="logs" class="log-container">
-                        <div class="log-item">[SYS] Technical Engine v6.0 Local Standby...</div>
+                <div class="console-card glass" style="display: flex; flex-direction: column; gap: 15px;">
+                    <h3 style="color: var(--accent); letter-spacing: 2px;">ENGINE CONTROL & LOGS</h3>
+                    
+                    <!-- MASTER CONTROL PANEL -->
+                    <div class="control-panel" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div class="input-group">
+                                <label style="font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 6px; text-transform: uppercase;">Modal Awal ($)</label>
+                                <input type="number" id="initial-modal" value="100" style="width: 100%; background: #000; border: 1px solid #1e293b; color: #fff; padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono'; outline: none;">
+                            </div>
+                            <div class="input-group">
+                                <label style="font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 6px; text-transform: uppercase;">Strategi</label>
+                                <select id="strategy-select" style="width: 100%; background: #000; border: 1px solid #1e293b; color: #fff; padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono'; outline: none;">
+                                    <option value="strategy1">GEMINI-3-PRO</option>
+                                    <option value="strategy2">GEMINI-3-FLASH</option>
+                                    <option value="claude-sonnet-4.6">CLAUDE-SONNET-4.6</option>
+                                    <option value="chatgpt">CHATGPT</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 15px;">
+                            <label style="font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 6px; text-transform: uppercase;">Execution Speed</label>
+                            <select id="speed-select" style="width: 100%; background: #000; border: 1px solid #64ffda; color: #64ffda; padding: 12px; border-radius: 6px; font-family: 'JetBrains Mono'; font-weight: bold; outline: none;">
+                                <option value="normal">NORMAL SPEED (0.05s)</option>
+                                <option value="fast">FAST SPEED (0.01s)</option>
+                                <option value="super">🚀 SUPER SPEED (0.001s)</option>
+                            </select>
+                        </div>
+                        <button id="start-btn" style="width: 100%; padding: 15px; background: #64ffda; color: #020617; border: none; border-radius: 8px; font-weight: 900; letter-spacing: 2px; cursor: pointer; transition: 0.3s; margin-bottom: 10px;">START TRADING ENGINE</button>
+                        <button id="pdf-btn" style="width: 100%; padding: 8px; background: transparent; color: #94a3b8; border: 1px solid #334155; border-radius: 6px; font-size: 0.75rem; cursor: pointer;">DOWNLOAD AUDIT REPORT (PDF)</button>
                     </div>
-                    <div class="input-area" style="flex-direction: column;">
-                        <button id="start-btn" style="width: 100%; padding: 1rem; font-size: 1.1rem; letter-spacing: 2px;">START TRADING ENGINE</button>
+
+                    <div id="logs" class="log-container" style="height: 200px; flex-grow: 1;">
+                        <div class="log-item">[SYS] 411 Engine v14.0 Ready for Master Order.</div>
                     </div>
                 </div>
             </div>
@@ -90,4 +124,5 @@
     <!-- SCRIPT DI AKHIR BODY UNTUK MEMASTIKAN DOM SIAP -->
     <script src="/static/script.js"></script>
 </body>
+
 </html>
