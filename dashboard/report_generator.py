@@ -165,10 +165,27 @@ def generate_csv_summary(filename, initial_balance, final_balance, trades, strat
     daily_avg_pct = 0
     monthly_avg_pct = 0
     yearly_avg_pct = 0
+    max_drawdown_pct = 0
+    lose_rate_pct = 0
     
     if trades:
         try:
             df_trades = pd.DataFrame(trades)
+            
+            # Max Drawdown Calculation
+            if not df_trades.empty:
+                # Kita hitung dari balance history
+                running_max = df_trades['balance'].cummax()
+                drawdown = (running_max - df_trades['balance']) / running_max
+                max_drawdown_pct = drawdown.max() * 100
+                
+                # Lose Rate Calculation (Exclude ENTRIES)
+                actual_trades = df_trades[df_trades['result'] != 'ENTRY']
+                if len(actual_trades) > 0:
+                    losses = len(actual_trades[actual_trades['result'] == 'LOSS'])
+                    lose_rate_pct = (losses / len(actual_trades)) * 100
+
+            # Time Stats
             df_trades['date'] = pd.to_datetime(df_trades['date'])
             start_date = df_trades['date'].min()
             end_date = df_trades['date'].max()
@@ -180,8 +197,8 @@ def generate_csv_summary(filename, initial_balance, final_balance, trades, strat
             daily_avg_pct = roi / duration_days
             monthly_avg_pct = roi / duration_months
             yearly_avg_pct = roi / duration_years
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"CSV Stat Error: {e}")
 
     import os
     file_exists = os.path.isfile(filename) and os.path.getsize(filename) > 0
@@ -194,6 +211,7 @@ def generate_csv_summary(filename, initial_balance, final_balance, trades, strat
             writer.writerow([
                 "strategy", "modal", "avg profit day %", "avg profit month %", 
                 "avg profit years %", "Total ROI", "Total Net Profit", 
+                "max drawdown %", "lose rate %",
                 "Asset Pair", "Simulation Duration", "timestamp"
             ])
         
@@ -206,6 +224,8 @@ def generate_csv_summary(filename, initial_balance, final_balance, trades, strat
             f"{yearly_avg_pct:.4f}%",
             f"{roi:.4f}%",
             f"${total_profit:.2f}",
+            f"{max_drawdown_pct:.2f}%",
+            f"{lose_rate_pct:.2f}%",
             coin,
             duration_str,
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
