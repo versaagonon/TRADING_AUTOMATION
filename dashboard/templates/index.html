@@ -20,6 +20,27 @@
 <body>
     <div class="overlay"></div>
 
+    <!-- SIDEBAR -->
+    <nav class="sidebar glass">
+        <div class="sidebar-logo">
+            <img src="/images/logo/411.png" alt="Logo" id="main-logo" style="width: 140px; margin-bottom: 5px;">
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active" data-page="dashboard">
+                <span class="icon"></span>
+                <span class="text">Dashboard</span>
+            </li>
+            <li class="nav-item" data-page="history">
+                <span class="icon"></span>
+                <span class="text">History Trade</span>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <span class="status-indicator"></span>
+            <span id="ai-status-sidebar">ONLINE</span>
+        </div>
+    </nav>
+
     <div class="dashboard-container">
         <!-- HEADER -->
         <header>
@@ -35,102 +56,159 @@
             </div>
         </header>
 
-        <!-- TOP METRICS -->
-        <div class="metrics-grid">
-            <div class="metric-card glass">
-                <span class="label">EQUITY (TOTAL)</span>
-                <span class="value" id="balance">$100.00</span>
+        <!-- PAGE Content: LIVE DASHBOARD -->
+        <div id="page-dashboard" class="page-content active">
+            <!-- TOP METRICS -->
+            <div class="metrics-grid">
+                <div class="metric-card glass">
+                    <span class="label">EQUITY (TOTAL)</span>
+                    <span class="value" id="balance">$100.00</span>
+                </div>
+                <div class="metric-card glass">
+                    <span class="label">MARKET PRICE</span>
+                    <span class="value accent" id="price">$0.00</span>
+                </div>
+                <div class="metric-card glass">
+                    <span class="label">ENGINE EFFICIENCY</span>
+                    <span class="value" id="win-rate">0%</span>
+                </div>
+                <div class="metric-card glass">
+                    <span class="label">EXPECTED MOVE</span>
+                    <span class="value" id="true-signal" style="color: #64ffda;">WAITING</span>
+                </div>
             </div>
-            <div class="metric-card glass">
-                <span class="label">MARKET PRICE</span>
-                <span class="value accent" id="price">$0.00</span>
-            </div>
-            <div class="metric-card glass">
-                <span class="label">ENGINE EFFICIENCY</span>
-                <span class="value" id="win-rate">0%</span>
-            </div>
-            <div class="metric-card glass">
-                <span class="label">EXPECTED MOVE</span>
-                <span class="value" id="true-signal" style="color: #64ffda;">WAITING</span>
+
+            <!-- MAIN LAYOUT -->
+            <div class="main-grid">
+                <!-- CHART (HARD-CODED CANVAS) -->
+                <div class="chart-section glass" id="chart-parent" style="position: relative; overflow: hidden;">
+                    <div class="chart-header" style="position: absolute; top:0; left:0; right:0; z-index: 10;">
+                        <h3 style="margin-left: 20px; margin-top: 20px;">EQUITY GROWTH CURVE (NATIVE ENGINE)</h3>
+                        <div id="pnl" class="pnl-badge" style="margin-right: 20px; margin-top: 20px;">$0.00</div>
+                    </div>
+                    <canvas id="chart-canvas"
+                        style="display: block; width: 100%; height: 100%; border-radius: 8px;"></canvas>
+                </div>
+
+                <!-- SIDEBAR INFO -->
+                <div class="sidebar-section">
+                    <!-- POSITION INFO -->
+                    <div class="pos-card glass">
+                        <h3>ENGINE TRADING STATUS</h3>
+                        <div class="pos-details">
+                            <div class="pos-row"><span>Logic:</span> <span id="pos-type">NONE</span></div>
+                            <div class="pos-row"><span>Entry:</span> <span id="pos-entry">-</span></div>
+                            <div class="pos-row"><span>Size:</span> <span id="pos-size">-</span></div>
+                        </div>
+                    </div>
+
+                    <!-- ALGOLOGS CONSOLE -->
+                    <div class="console-card glass" style="display: flex; flex-direction: column; gap: 15px;">
+                        <h3 style="color: var(--accent); letter-spacing: 2px;">ENGINE CONTROL & LOGS</h3>
+
+                        <!-- MASTER CONTROL PANEL -->
+                        <div class="control-panel"
+                            style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px;">
+                            <div style="display: grid; grid-template-columns: 1.5fr 2fr 1.5fr; gap: 12px; margin-bottom: 12px;">
+                                <div class="input-group">
+                                    <label
+                                        style="font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 6px; text-transform: uppercase;">Modal
+                                        Awal ($)</label>
+                                    <input type="number" id="initial-modal" value="100"
+                                        style="width: 100%; background: #000; border: 1px solid #1e293b; color: #fff; padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono'; outline: none;">
+                                </div>
+                                <div class="input-group">
+                                    <label
+                                        style="font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 6px; text-transform: uppercase;">Strategi</label>
+                                    <select id="strategy-select"
+                                        style="width: 100%; background: #000; border: 1px solid #1e293b; color: #fff; padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono'; outline: none;">
+                                        <option value="geminipro">GEMINI-3-PRO</option>
+                                        <option value="geminiflash">GEMINI-3-FLASH</option>
+                                        <option value="gemini-codeagent">GEMINI-CODEAGENT 🤖</option>
+                                        <option value="claude-sonnet-4.6">CLAUDE-SONNET-4.6</option>
+                                        <option value="claude-sonnet-4.6-v2">CLAUDE-SONNET-4.6-V2 ⚡</option>   
+                                        <option value="claude-opus-4.6">CLAUDE-OPUS-4.6</option>
+                                        <option value="claude-opus-4.6-v2">CLAUDE-OPUS-4.6-V2 ⚡</option>
+                                        <option value="chatgpt">CHATGPT</option>
+                                        <option value="chatgpt-v2">CHATGPT-V2 💠</option>
+                                        <option value="grok">GROK-XAI</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label
+                                        style="font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 6px; text-transform: uppercase;">Timeframe</label>
+                                    <select id="timeframe-select"
+                                        style="width: 100%; background: #000; border: 1px solid #1e293b; color: #fff; padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono'; outline: none;">
+                                        <option value="1h">1 HOUR (2024-25)</option>
+                                        <option value="1m">1 MINUTE (3 MO)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="input-group" style="margin-bottom: 15px;">
+                                <label
+                                    style="font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 6px; text-transform: uppercase;">Execution
+                                    Speed</label>
+                                <select id="speed-select"
+                                    style="width: 100%; background: #000; border: 1px solid #64ffda; color: #64ffda; padding: 12px; border-radius: 6px; font-family: 'JetBrains Mono'; font-weight: bold; outline: none;">
+                                    <option value="normal">NORMAL SPEED (0.05s)</option>
+                                    <option value="fast">FAST SPEED (0.01s)</option>
+                                    <option value="super">🚀 SUPER SPEED (0.001s)</option>
+                                </select>
+                            </div>
+                            <button id="start-btn"
+                                style="width: 100%; padding: 15px; background: #64ffda; color: #020617; border: none; border-radius: 8px; font-weight: 900; letter-spacing: 2px; cursor: pointer; transition: 0.3s; margin-bottom: 10px;">START
+                                TRADING ENGINE</button>
+                            <button id="pdf-btn"
+                                style="width: 100%; padding: 8px; background: transparent; color: #94a3b8; border: 1px solid #334155; border-radius: 6px; font-size: 0.75rem; cursor: pointer;">DOWNLOAD
+                                AUDIT REPORT (PDF)</button>
+                        </div>
+
+                        <div id="logs" class="log-container" style="height: 200px; flex-grow: 1;">
+                            <div class="log-item">[SYS] 411 Engine v14.0 Ready for Master Order.</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- MAIN LAYOUT -->
-        <div class="main-grid">
-            <!-- CHART (HARD-CODED CANVAS) -->
-            <div class="chart-section glass" id="chart-parent" style="position: relative; overflow: hidden;">
-                <div class="chart-header" style="position: absolute; top:0; left:0; right:0; z-index: 10;">
-                    <h3 style="margin-left: 20px; margin-top: 20px;">EQUITY GROWTH CURVE (NATIVE ENGINE)</h3>
-                    <div id="pnl" class="pnl-badge" style="margin-right: 20px; margin-top: 20px;">$0.00</div>
+        <!-- PAGE CONTENT: HISTORY & COMPARISON -->
+        <div id="page-history" class="page-content">
+            <div class="comparison-section flex-column" style="gap: 20px;">
+                <h2 class="section-title">STRATEGY PERFORMANCE COMPARISON (TOTAL ROI %)</h2>
+                
+                <h3 style="color: var(--accent); font-size: 0.9rem; letter-spacing: 2px;">[ TIME FRAME: 1 HOUR ]</h3>
+                <div id="unified-strategy-container" class="unified-chart-card glass">
+                    <!-- Bars injected by JS -->
                 </div>
-                <canvas id="chart-canvas"
-                    style="display: block; width: 100%; height: 100%; border-radius: 8px;"></canvas>
+
+                <h3 style="color: var(--accent); font-size: 0.9rem; letter-spacing: 2px; margin-top: 20px;">[ TIME FRAME: 1 MINUTE ]</h3>
+                <div id="unified-strategy-container-1m" class="unified-chart-card glass">
+                    <!-- Bars injected by JS -->
+                </div>
             </div>
 
-            <!-- SIDEBAR INFO -->
-            <div class="sidebar-section">
-                <!-- POSITION INFO -->
-                <div class="pos-card glass">
-                    <h3>ENGINE TRADING STATUS</h3>
-                    <div class="pos-details">
-                        <div class="pos-row"><span>Logic:</span> <span id="pos-type">NONE</span></div>
-                        <div class="pos-row"><span>Entry:</span> <span id="pos-entry">-</span></div>
-                        <div class="pos-row"><span>Size:</span> <span id="pos-size">-</span></div>
-                    </div>
-                </div>
-
-                <!-- ALGOLOGS CONSOLE -->
-                <div class="console-card glass" style="display: flex; flex-direction: column; gap: 15px;">
-                    <h3 style="color: var(--accent); letter-spacing: 2px;">ENGINE CONTROL & LOGS</h3>
-
-                    <!-- MASTER CONTROL PANEL -->
-                    <div class="control-panel"
-                        style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                            <div class="input-group">
-                                <label
-                                    style="font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 6px; text-transform: uppercase;">Modal
-                                    Awal ($)</label>
-                                <input type="number" id="initial-modal" value="100"
-                                    style="width: 100%; background: #000; border: 1px solid #1e293b; color: #fff; padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono'; outline: none;">
-                            </div>
-                            <div class="input-group">
-                                <label
-                                    style="font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 6px; text-transform: uppercase;">Strategi</label>
-                                <select id="strategy-select"
-                                    style="width: 100%; background: #000; border: 1px solid #1e293b; color: #fff; padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono'; outline: none;">
-                                    <option value="geminipro">GEMINI-3-PRO</option>
-                                    <option value="geminiflash">GEMINI-3-FLASH</option>
-                                    <option value="claude-sonnet-4.6">CLAUDE-SONNET-4.6</option>
-                                    <option value="claude-opus-4.6">CLAUDE-OPUS-4.6</option>
-                                    <option value="claude-opus-4.6-v2">CLAUDE-OPUS-4.6-V2 ⚡</option>
-                                    <option value="chatgpt">CHATGPT</option>
-                                    <option value="grok">GROK-XAI</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="input-group" style="margin-bottom: 15px;">
-                            <label
-                                style="font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 6px; text-transform: uppercase;">Execution
-                                Speed</label>
-                            <select id="speed-select"
-                                style="width: 100%; background: #000; border: 1px solid #64ffda; color: #64ffda; padding: 12px; border-radius: 6px; font-family: 'JetBrains Mono'; font-weight: bold; outline: none;">
-                                <option value="normal">NORMAL SPEED (0.05s)</option>
-                                <option value="fast">FAST SPEED (0.01s)</option>
-                                <option value="super">🚀 SUPER SPEED (0.001s)</option>
-                            </select>
-                        </div>
-                        <button id="start-btn"
-                            style="width: 100%; padding: 15px; background: #64ffda; color: #020617; border: none; border-radius: 8px; font-weight: 900; letter-spacing: 2px; cursor: pointer; transition: 0.3s; margin-bottom: 10px;">START
-                            TRADING ENGINE</button>
-                        <button id="pdf-btn"
-                            style="width: 100%; padding: 8px; background: transparent; color: #94a3b8; border: 1px solid #334155; border-radius: 6px; font-size: 0.75rem; cursor: pointer;">DOWNLOAD
-                            AUDIT REPORT (PDF)</button>
-                    </div>
-
-                    <div id="logs" class="log-container" style="height: 200px; flex-grow: 1;">
-                        <div class="log-item">[SYS] 411 Engine v14.0 Ready for Master Order.</div>
-                    </div>
+            <div class="history-table-section glass">
+                <h2 class="section-title">DETAILED TRADE HISTORY</h2>
+                <div class="table-wrapper">
+                    <table id="history-table">
+                        <thead>
+                            <tr>
+                                <th>Strategy</th>
+                                <th>Capital</th>
+                                <th>ROI</th>
+                                <th>Net Profit</th>
+                                <th>Total Profit ($)</th>
+                                <th>Total Loss ($)</th>
+                                <th>Drawdown</th>
+                                <th>Win Rate</th>
+                                <th>Duration</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody">
+                            <!-- Data will be injected by JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

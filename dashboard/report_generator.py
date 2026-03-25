@@ -168,10 +168,22 @@ def generate_csv_summary(filename, initial_balance, final_balance, trades, strat
     max_drawdown_pct = 0
     lose_rate_pct = 0
     
+    total_gained_dlr = 0
+    total_lost_dlr = 0
+    
     if trades:
         try:
             df_trades = pd.DataFrame(trades)
             
+            # Calculate Total Gained and Lost in Dollars
+            current_bal = initial_balance
+            for t in trades:
+                if t['result'] != 'ENTRY':
+                    pnl = t['balance'] - current_bal
+                    if pnl > 0: total_gained_dlr += pnl
+                    else: total_lost_dlr += abs(pnl)
+                    current_bal = t['balance']
+
             # Max Drawdown Calculation
             if not df_trades.empty:
                 # Kita hitung dari balance history
@@ -211,6 +223,7 @@ def generate_csv_summary(filename, initial_balance, final_balance, trades, strat
             writer.writerow([
                 "strategy", "modal", "avg profit day %", "avg profit month %", 
                 "avg profit years %", "Total ROI", "Total Net Profit", 
+                "Profit ($)", "Loss ($)",
                 "max drawdown %", "lose rate %",
                 "Asset Pair", "Simulation Duration", "timestamp"
             ])
@@ -224,6 +237,8 @@ def generate_csv_summary(filename, initial_balance, final_balance, trades, strat
             f"{yearly_avg_pct:.4f}%",
             f"{roi:.4f}%",
             f"${total_profit:.2f}",
+            f"${total_gained_dlr:.2f}",
+            f"${total_lost_dlr:.2f}",
             f"{max_drawdown_pct:.2f}%",
             f"{lose_rate_pct:.2f}%",
             coin,

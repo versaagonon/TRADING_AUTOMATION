@@ -104,8 +104,16 @@ function drawChart(history, markers, currentIdx) {
     const canvas = document.getElementById('chart-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const w = canvas.width = canvas.parentElement.clientWidth;
-    const h = canvas.height = canvas.parentElement.clientHeight;
+    const targetW = canvas.parentElement.clientWidth;
+    const targetH = canvas.parentElement.clientHeight;
+
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+    }
+    
+    const w = canvas.width;
+    const h = canvas.height;
 
     ctx.clearRect(0, 0, w, h);
     if (!history || history.length < 2) return;
@@ -193,13 +201,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const startBtn = document.getElementById('start-btn');
     const pdfBtn = document.getElementById('pdf-btn');
 
+    // --- NAVIGATION LOGIC ---
+    const navItems = document.querySelectorAll('.nav-item');
+    const pages = document.querySelectorAll('.page-content');
+
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const targetPage = item.getAttribute('data-page');
+            
+            // Update Active Link
+            navItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+
+            // Update Active Page
+            pages.forEach(p => {
+                p.classList.remove('active');
+                if (p.id === `page-${targetPage}`) p.classList.add('active');
+            });
+
+            if (targetPage === 'history') {
+                fetchHistory();
+            }
+        });
+    });
+
     if (startBtn) {
         startBtn.addEventListener('click', () => {
             if (!isRunning) {
                 const modal = document.getElementById('initial-modal').value || 100;
                 const strategy = document.getElementById('strategy-select').value || 'geminipro';
                 const speed = document.getElementById('speed-select').value || 'normal';
-                socket.emit('start_engine', { initial_balance: parseFloat(modal), strategy, speed });
+                const timeframe = document.getElementById('timeframe-select').value || '1h';
+                socket.emit('start_engine', { initial_balance: parseFloat(modal), strategy, speed, timeframe });
             } else {
                 socket.emit('stop_engine');
             }
@@ -214,6 +247,126 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.status === 'success') alert('PDF Report Generated: ' + data.filename);
                     else alert('Error: ' + data.message);
                 });
+        });
+    }
+
+    const strategyConfig = {
+        'geminipro': { logo: 'gemini.png', class: 'bg-gemini' },
+        'geminiflash': { logo: 'gemini.png', class: 'bg-gemini' },
+        'gemini-codeagent': { logo: 'gemini.png', class: 'bg-gemini' },
+        'claude-sonnet-4.6': { logo: 'Claude.png', class: 'bg-claude' },
+        'claude-sonnet-4.6-v2': { logo: 'Claude.png', class: 'bg-claude' },
+        'claude-opus-4.6': { logo: 'Claude.png', class: 'bg-claude' },
+        'claude-opus-4.6-v2': { logo: 'Claude.png', class: 'bg-claude' },
+        'chatgpt': { logo: 'chatgpt.png', class: 'bg-chatgpt' },
+        'chatgpt-v2': { logo: 'chatgpt.png', class: 'bg-chatgpt' },
+        'grok': { logo: 'grok.png', class: 'bg-grok' }
+    };
+
+    function fetchHistory() {
+        console.log("Fetching Dual History...");
+        fetch('/get_history')
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === 'success') {
+                    // Render 1H Chart
+                    renderUnifiedChart(result.data_1h, 'unified-strategy-container');
+                    // Render 1M Chart
+                    renderUnifiedChart(result.data_1m, 'unified-strategy-container-1m');
+                    
+                    // Render Table (Combined or just sort all by timestamp)
+                    const combined = [...result.data_1h, ...result.data_1m];
+                    renderHistoryTable(combined);
+                }
+            });
+    }
+
+    function renderUnifiedChart(data, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div style="color: var(--text-muted); padding: 20px; text-align: center;">No history data found for this timeframe.</div>';
+            return;
+        }
+
+        // Group by strategy and find best ROI
+        const strategies = {};
+        data.forEach(item => {
+            const name = item.strategy.toLowerCase();
+            if (!strategies[name] || parseFloat(item['Total ROI']) > parseFloat(strategies[name]['Total ROI'])) {
+                strategies[name] = item;
+            }
+        });
+
+        // Find max ROI for percentage calculation
+        const stratArray = Object.values(strategies);
+        const maxROI = Math.max(...stratArray.map(s => Math.abs(parseFloat(s['Total ROI']))), 10);
+
+        stratArray.sort((a,b) => parseFloat(b['Total ROI']) - parseFloat(a['Total ROI'])).forEach(strat => {
+            const key = strat.strategy.toLowerCase();
+            const config = strategyConfig[key] || { logo: 'gemini.png', class: 'bg-grok' };
+            const roi = parseFloat(strat['Total ROI']);
+            const barWidth = (Math.abs(roi) / maxROI) * 100;
+
+            const row = document.createElement('div');
+            row.className = 'bar-row';
+            row.innerHTML = `
+                <div class="bar-label" style="flex-direction: column; align-items: flex-start; gap: 2px; width: 180px;">
+                    <div style="display: flex; align-items: center; gap: 0.8rem;">
+                        <img src="/images/logo/${config.logo}" class="bar-logo-small">
+                        <span style="white-space: nowrap;">${strat.strategy}</span>
+                    </div>
+                    <div style="font-size: 0.6rem; padding-left: 32px; display: flex; flex-direction: column; gap: 2px; font-family: 'JetBrains Mono'; margin-top: 2px;">
+                        <div style="display: flex; gap: 12px;">
+                            <span style="color: var(--green); font-weight: bold;">P: ${strat['Profit ($)'] || '$0'}</span>
+                            <span style="color: #ff4b5c; font-weight: bold;">L: ${strat['Loss ($)'] || '$0'}</span>
+                        </div>
+                        <span style="color: var(--text-muted); font-size: 0.55rem; opacity: 0.8;">CAPITAL: ${strat['modal'] || '-'}</span>
+                    </div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill ${config.class}" style="width: 0%;" data-width="${barWidth}%">
+                        ${roi.toFixed(1)}%
+                    </div>
+                </div>
+                <div class="profit-label">
+                    ${strat['Total Net Profit']}
+                </div>
+            `;
+            container.appendChild(row);
+
+            // Animate after append
+            setTimeout(() => {
+                row.querySelector('.bar-fill').style.width = row.querySelector('.bar-fill').getAttribute('data-width');
+            }, 50);
+        });
+    }
+
+    function renderHistoryTable(data) {
+        const tbody = document.getElementById('history-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        data.reverse().forEach(item => {
+            const roi = parseFloat(item['Total ROI']);
+            const roiClass = roi >= 0 ? 'roi-positive' : 'roi-negative';
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="font-weight: bold; color: var(--accent);">${item.strategy}</td>
+                <td>${item.modal || '-'}</td>
+                <td class="${roiClass}">${roi.toFixed(2)}%</td>
+                <td>${item['Total Net Profit']}</td>
+                <td style="color: var(--green);">${item['Profit ($)'] || '-'}</td>
+                <td style="color: var(--red);">${item['Loss ($)'] || '-'}</td>
+                <td style="color: var(--red);">${item['max drawdown %']}</td>
+                <td>${(100 - parseFloat(item['lose rate %'])).toFixed(1)}%</td>
+                <td style="color: var(--text-muted); font-size: 0.75rem;">${item['Simulation Duration']}</td>
+                <td style="color: var(--text-muted); font-size: 0.75rem;">${item.timestamp}</td>
+            `;
+            tbody.appendChild(row);
         });
     }
 });

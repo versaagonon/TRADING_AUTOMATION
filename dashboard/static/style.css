@@ -247,3 +247,199 @@ a[href*="tradingview"] {
     opacity: 0.5;
     z-index: 10;
 }
+
+/* SIDEBAR STYLES */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 260px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 1.5rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 3rem;
+}
+
+.logo-text {
+    font-weight: 800;
+    letter-spacing: 4px;
+    color: var(--accent);
+    font-size: 1.2rem;
+}
+
+.nav-links {
+    list-style: none;
+    flex-grow: 1;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+}
+
+.nav-item:hover {
+    background: rgba(100, 255, 218, 0.05);
+    color: var(--text-primary);
+}
+
+.nav-item.active {
+    background: var(--accent);
+    color: var(--bg-color);
+    font-weight: 700;
+}
+
+.nav-item .icon {
+    font-size: 1.2rem;
+}
+
+/* PAGE CONTENT HANDLING */
+.dashboard-container {
+    padding: 2rem;
+    padding-left: 280px; /* Offset for sidebar */
+    max-width: 1600px;
+    margin: 0 auto;
+    min-height: 100vh;
+}
+
+.page-content {
+    display: none;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.page-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* STRATEGY COMPARISON STYLES */
+.section-title {
+    font-size: 1.2rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+}
+
+/* UNIFIED BAR CHART STYLES */
+.unified-chart-card {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.bar-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.bar-label {
+    width: 150px;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.bar-logo-small {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.bar-container {
+    flex-grow: 1;
+    height: 35px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bar-fill {
+    height: 100%;
+    width: 0%; /* Dynamic */
+    transition: width 1s ease-in-out;
+    border-radius: 4px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.profit-label {
+    width: 120px;
+    text-align: right;
+    font-family: 'JetBrains Mono';
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.9rem;
+}
+
+/* BRAND COLORS */
+.bg-gemini { background: linear-gradient(90deg, #4285F4, #34a853); box-shadow: 0 0 15px rgba(66, 133, 244, 0.3); }
+.bg-chatgpt { background: linear-gradient(90deg, #10a37f, #1a7f64); box-shadow: 0 0 15px rgba(16, 163, 127, 0.3); }
+.bg-claude { background: linear-gradient(90deg, #d97757, #bd5a3c); box-shadow: 0 0 15px rgba(217, 119, 87, 0.3); }
+.bg-grok { background: linear-gradient(90deg, #555, #222); box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
+
+/* HISTORY TABLE STYLES */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+th {
+    text-align: left;
+    padding: 1rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+}
+
+td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.roi-positive { color: var(--green); }
+.roi-negative { color: var(--red); }

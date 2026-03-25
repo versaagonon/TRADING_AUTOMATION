@@ -5,7 +5,7 @@ import json
 import importlib
 import pandas as pd
 import pandas_ta as ta
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit
 from report_generator import generate_pdf
 
@@ -15,7 +15,10 @@ socketio = SocketIO(app, async_mode='threading', cors_allowed_origins="*", ping_
 
 # CONFIG
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FILE = os.path.join(os.path.abspath(os.path.join(BASE_DIR, "..")), "btc_2024_2025.json")
+
+@app.route('/images/<path:filename>')
+def serve_images(filename):
+    return send_from_directory(os.path.join(BASE_DIR, "images"), filename)
 
 state = {
     "engine_running": False,
@@ -33,6 +36,7 @@ state = {
     "sim_date": "-",
     "sim_index": 0,
     "strategy_name": "geminipro",
+    "timeframe": "1h",
     "trade_history": []
 }
 
@@ -40,11 +44,23 @@ df_historical = None
 equity_history = []
 trade_markers = []
 
-def load_and_calculate_indicators(strategy_name):
+def load_and_calculate_indicators(strategy_name, timeframe="1h"):
     global df_historical
-    if not os.path.exists(DATA_FILE): return False
+    
+    file_map = {
+        "1m": "btc_1min_3months.json",
+        "1h": "btc_2024_2025.json"
+    }
+    
+    filename = file_map.get(timeframe, "btc_2024_2025.json")
+    data_path = os.path.join(os.path.abspath(os.path.join(BASE_DIR, "..")), filename)
+
+    if not os.path.exists(data_path): 
+        print(f"File not found: {data_path}")
+        return False
+        
     try:
-        with open(DATA_FILE, 'r') as f: records = json.load(f)
+        with open(data_path, 'r') as f: records = json.load(f)
         df = pd.DataFrame(records)
         df['close'] = df['close'].astype(float)
         
@@ -54,11 +70,13 @@ def load_and_calculate_indicators(strategy_name):
         df = strat_mod.calculate_indicators(df, ta)
         df_historical = df.dropna().reset_index(drop=True)
         return strat_mod
-    except Exception as e: return None
+    except Exception as e: 
+        print(f"Load Error: {e}")
+        return None
 
-def historical_sim_tracker(strategy_name):
+def historical_sim_tracker(strategy_name, timeframe="1h"):
     global df_historical, equity_history, trade_markers
-    strat_mod = load_and_calculate_indicators(strategy_name)
+    strat_mod = load_and_calculate_indicators(strategy_name, timeframe)
     if not strat_mod: return
             
     total_records = len(df_historical)
@@ -131,15 +149,17 @@ def historical_sim_tracker(strategy_name):
             equity_history.append(float(equity))
             
             # DINAMIS SPEED & EVENT THROTTLING (Anti-Crash)
+            total_records = len(df_historical)
             delay = 0.04
             emit_skip = 1
             
             if state.get("speed") == "fast": 
                 delay = 0.01
-                emit_skip = 3
+                emit_skip = 5 if total_records < 10000 else 20
             elif state.get("speed") == "super": 
-                delay = 0      # No delay (True execution speed)
-                emit_skip = 25 # Skip 25 frames per UI emit to prevent Browser OOM
+                delay = 0
+                # Untuk 133rb data, skip 100-500 biar tidak freeze
+                emit_skip = 50 if total_records < 10000 else 250
             
             # Emit data hanya pada frame terpilih
             if i % emit_skip == 0:
@@ -163,9 +183,12 @@ def historical_sim_tracker(strategy_name):
     # AUTOMATIC AUDIT RECORD (Master Versaa Request)
     try:
         strategy = state.get("strategy_name", "Unknown")
+        timeframe = state.get("timeframe", "1h")
+        csv_filename = "history_trade_1m.csv" if timeframe == "1m" else "history_trade.csv"
+        
         from report_generator import generate_csv_summary
-        generate_csv_summary("history_trade.csv", state["initial_balance"], state["balance"], state["trade_history"], strategy_name=strategy)
-        state["logs"].append(f"🟢 [AUDIT] Live History Updated: history_trade.csv")
+        generate_csv_summary(csv_filename, state["initial_balance"], state["balance"], state["trade_history"], strategy_name=strategy)
+        state["logs"].append(f"🟢 [AUDIT] Live History Updated: {csv_filename}")
     except Exception as e:
         print(f"Auto CSV Error: {e}")
 
@@ -183,6 +206,30 @@ def report():
         return jsonify({"status": "success", "filename": filename})
     except Exception as e: 
         print(f"PDF Error: {e}")
+        return jsonify({"status": "error", "message": str(e)})
+
+@app.route('/get_history')
+def get_history():
+    try:
+        h1_path = os.path.join(BASE_DIR, "history_trade.csv")
+        m1_path = os.path.join(BASE_DIR, "history_trade_1m.csv")
+        
+        data_h1 = []
+        data_m1 = []
+        
+        if os.path.exists(h1_path):
+            data_h1 = pd.read_csv(h1_path).to_dict(orient='records')
+        
+        if os.path.exists(m1_path):
+            data_m1 = pd.read_csv(m1_path).to_dict(orient='records')
+            
+        return jsonify({
+            "status": "success", 
+            "data_1h": data_h1,
+            "data_1m": data_m1
+        })
+    except Exception as e:
+        print(f"History Fetch Error: {e}")
         return jsonify({"status": "error", "message": str(e)})
 
 @socketio.on('start_engine')
@@ -203,16 +250,17 @@ def handle_start_engine(data):
         state["initial_balance"] = data.get('initial_balance', 100.0)
         state["balance"] = state["initial_balance"]
         state["strategy_name"] = data.get('strategy', 'geminipro')
+        state["timeframe"] = data.get('timeframe', '1h')
         state["speed"] = data.get('speed', 'normal') 
         state["engine_running"] = True
-        state["ai_status"] = f"PREPARING ({state['strategy_name'].upper()})"
+        state["ai_status"] = f"PREPARING ({state['strategy_name'].upper()} @ {state['timeframe']})"
         
         # Kirim sinyal reset and state awal
         emit('raw_update', {"reset": True, "ai_status": state["ai_status"]})
         emit('state_update', state)
         
         # 3. START FRESH THREAD
-        threading.Thread(target=historical_sim_tracker, args=(state["strategy_name"],), daemon=True).start()
+        threading.Thread(target=historical_sim_tracker, args=(state["strategy_name"], state["timeframe"]), daemon=True).start()
 
 @socketio.on('stop_engine')
 def handle_stop_engine():
@@ -221,8 +269,11 @@ def handle_stop_engine():
     # AUTOMATIC AUDIT RECORD ON FORCE STOP
     try:
         strategy = state.get("strategy_name", "Unknown")
+        timeframe = state.get("timeframe", "1h")
+        csv_filename = "history_trade_1m.csv" if timeframe == "1m" else "history_trade.csv"
+        
         from report_generator import generate_csv_summary
-        generate_csv_summary("history_trade.csv", state["initial_balance"], state["balance"], state["trade_history"], strategy_name=strategy)
+        generate_csv_summary(csv_filename, state["initial_balance"], state["balance"], state["trade_history"], strategy_name=strategy)
     except Exception as e:
         print(f"Auto CSV Error: {e}")
 
